@@ -1,32 +1,77 @@
 import React, { useState, useEffect } from "react";
-import { Container, VStack, HStack, Select, Input, Button, Switch, Textarea, Text, Box, useToast } from "@chakra-ui/react";
+import { Container, VStack, HStack, Select, Input, Button, Switch, Textarea, Text, Box, useToast, Spinner } from "@chakra-ui/react";
 import { FaSearch } from "react-icons/fa";
+import ReactMarkdown from 'react-markdown';
 
 const Index = () => {
-  const [baseUrl, setBaseUrl] = useState("http://localhost:8000");
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [prompt, setPrompt] = useState("");
   const [enableSearch, setEnableSearch] = useState(false);
   const [response, setResponse] = useState("");
+  const [searchResults, setSearchResults] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
-    // Fetch available models from the local Ollama instance
-    fetch(`${baseUrl}/models`)
+    // Fetch available models from API
+    fetch('/api/models')
       .then((res) => res.json())
       .then((data) => setModels(data.models))
       .catch((error) => {
         console.error("Error fetching models:", error);
         toast({
           title: "Error",
-          description: "Failed to fetch models from the local Ollama instance.",
+          description: "Failed to fetch models from server.",
           status: "error",
           duration: 5000,
           isClosable: true,
         });
       });
-  }, [baseUrl, toast]);
+  }, [toast]);
+
+  const performWebSearch = async (query) => {
+    try {
+      // Utilisation d'un proxy CORS pour accéder à l'API DuckDuckGo
+      const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://html.duckduckgo.com/html/?q=${query}`)}`);
+      const data = await response.json();
+      
+      if (!data.contents) {
+        throw new Error('No search results found');
+      }
+
+      // Créer un parser HTML temporaire
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.contents, 'text/html');
+      
+      // Extraire les résultats de recherche
+      const results = [];
+      const searchResults = doc.querySelectorAll('.result__snippet');
+      searchResults.forEach(result => {
+        if (result.textContent) {
+          results.push(result.textContent.trim());
+        }
+      });
+
+      // Limiter à 5 résultats
+      const limitedResults = results.slice(0, 5);
+
+      // Transformer chaque snippet en puce
+      const bulletPoints = limitedResults.map(r => `- ${r}`).join('\n');
+
+      return bulletPoints;
+    } catch (error) {
+      console.error('Web search error:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to perform web search. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      return '';
+    }
+  };
 
   const handleSearch = async () => {
     if (!selectedModel || !prompt) {
@@ -41,20 +86,39 @@ const Index = () => {
     }
 
     try {
-      const searchResults = enableSearch ? await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(prompt)}&format=json`).then((res) => res.json()) : null;
-      const searchContext = searchResults ? searchResults.RelatedTopics.map((topic) => topic.Text).join("\n") : "";
+      setIsLoading(true);
+      setResponse("");
+      setSearchResults("");
 
-      const response = await fetch(`${baseUrl}/models/${selectedModel}/generate`, {
-        method: "POST",
+      let finalPrompt = prompt;
+      
+      if (enableSearch) {
+        setSearchResults("Searching the web...");
+        const searchContext = await performWebSearch(prompt);
+        
+        if (searchContext) {
+          setSearchResults(searchContext);
+          finalPrompt = `Question: ${prompt}\n\nContext from web search:\n${searchContext}\n\nPlease provide a comprehensive answer based on the above context:`;
+        } else {
+          setSearchResults("No relevant search results found.");
+        }
+      }
+      
+      const response = await fetch('/api/generate', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: enableSearch ? `${prompt}\n\nSearch Context:\n${searchContext}` : prompt,
+          model: selectedModel,
+          prompt: finalPrompt,
         }),
-      }).then((res) => res.json());
+      });
 
-      setResponse(response.text);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      
+      setResponse(data.response);
     } catch (error) {
       console.error("Error generating response:", error);
       toast({
@@ -64,16 +128,20 @@ const Index = () => {
         duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Container centerContent maxW="container.md" py={8}>
       <VStack spacing={4} width="100%">
-        <HStack width="100%">
-          <Text>Base URL:</Text>
-          <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
-        </HStack>
+        <Text fontSize="2xl" fontWeight="bold">
+          Welcome to Ollama Search GUI
+        </Text>
+        <Text>
+          Enter your prompt, select a model, and optionally enable web search. Then click "Generate Response" to see the AI's answer!
+        </Text>
         <HStack width="100%">
           <Text>Select Model:</Text>
           <Select placeholder="Select model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
@@ -85,17 +153,49 @@ const Index = () => {
           </Select>
         </HStack>
         <HStack width="100%">
-          <Text>Enable Search:</Text>
+          <Text>Enable Search (DuckDuckGo):</Text>
           <Switch isChecked={enableSearch} onChange={(e) => setEnableSearch(e.target.checked)} />
         </HStack>
         <Textarea placeholder="Enter your prompt here..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-        <Button leftIcon={<FaSearch />} colorScheme="teal" onClick={handleSearch}>
+        <Button 
+          leftIcon={<FaSearch />} 
+          colorScheme="teal" 
+          onClick={handleSearch}
+          isLoading={isLoading}
+          loadingText="Generating..."
+        >
           Generate Response
         </Button>
+        
+        {isLoading && (
+          <Box width="100%" p={4} textAlign="center">
+            <VStack spacing={3}>
+              <Spinner size="xl" color="teal.500" />
+              <Text>The AI is thinking... Please wait</Text>
+            </VStack>
+          </Box>
+        )}
+
         {response && (
           <Box width="100%" p={4} borderWidth="1px" borderRadius="md">
-            <Text fontWeight="bold">Response:</Text>
-            <Text>{response}</Text>
+            <Text fontWeight="bold" mb={2}>AI Response:</Text>
+            <Box className="markdown-body">
+              <ReactMarkdown>{response}</ReactMarkdown>
+            </Box>
+          </Box>
+        )}
+
+        {enableSearch && searchResults && (
+          <Box
+            width="100%"
+            p={4}
+            borderWidth="1px"
+            borderRadius="md"
+            bg="gray.50"
+            fontSize="sm"
+          >
+            <Text fontWeight="bold" mb={2}>Web Search Results:</Text>
+            <ReactMarkdown>{searchResults}</ReactMarkdown>
           </Box>
         )}
       </VStack>
