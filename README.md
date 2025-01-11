@@ -1,6 +1,6 @@
-# Ollama Search GUI
+# Ollama GUI with Web Access
 
-Ollama Search GUI is a graphical user interface that connects to a local instance of Ollama and allows the selected Ollama model to browse/search the internet. Users can select from the available Ollama models, change the base URL, enter prompts, enable/disable search, etc. The search is provided via DuckDuckGo.
+*Ollama GUI with Web Access* is a graphical user interface that connects to a local instance of Ollama and allows the selected Ollama model to browse/search the internet. Users can select from the available Ollama models, change the base URL, enter prompts, enable/disable search, etc. The search is provided via DuckDuckGo.
 
 ## Features
 
@@ -26,7 +26,7 @@ This project is built with React and Chakra UI.
 Clone the repository and install dependencies:
 
 ```sh
-git clone https://github.com/GPT-Engineer-App/ollama-search-gui.git
+git clone https://github.com/skhelladi/ollama-gui-web-access.git
 cd ollama-search-gui
 npm install
 ```
