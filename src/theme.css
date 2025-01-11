@@ -1,0 +1,72 @@
+:root {
+  --primary-light: #2c7a7b;
+  --primary-dark: #81e6d9;
+  --bg-light: #f7fafc;
+  --bg-dark: #1a202c;
+  --text-light: #2d3748;
+  --text-dark: #e2e8f0;
+  --code-bg-light: #f5f2f0;
+  --code-bg-dark: #2d2d2d;
+  --code-text-light: #d6336c;
+  --code-text-dark: #ff79c6;
+}
+
+body {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.markdown-body {
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+[data-theme="light"] .markdown-body {
+  background-color: #ffffff;
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .markdown-body {
+  background-color: #2d3748;
+  color: var(--text-dark);
+}
+
+.markdown-body pre {
+  background-color: var(--code-bg-light);
+  color: var(--code-text-light);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+[data-theme="dark"] .markdown-body pre {
+  background-color: var(--code-bg-dark);
+  color: var(--code-text-dark);
+}
+
+.container-box {
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.search-results {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.response-box {
+  border-width: 1px;
+  border-style: solid;
+  transition: all 0.2s ease-in-out;
+}
+
+[data-theme="light"] .response-box {
+  border-color: #e2e8f0;
+  background-color: #ffffff;
+}
+
+[data-theme="dark"] .response-box {
+  border-color: #4a5568;
+  background-color: #2d3748;
+}

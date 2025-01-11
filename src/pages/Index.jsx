@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Container, VStack, HStack, Select, Input, Button, Switch, Textarea, Text, Box, useToast, Spinner } from "@chakra-ui/react";
 import { FaSearch } from "react-icons/fa";
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { ThemeToggle } from "../components/ThemeToggle";
 
 const Index = () => {
   const [models, setModels] = useState([]);
@@ -133,9 +136,16 @@ const Index = () => {
     }
   };
 
+  const renderers = {
+    code: ({ language, value }) => {
+      return <SyntaxHighlighter style={dark} language={language} children={value} />;
+    }
+  };
+
   return (
-    <Container centerContent maxW="container.md" py={8}>
-      <VStack spacing={4} width="100%">
+    <Container centerContent maxW="container.lg" py={8}>
+      <ThemeToggle />
+      <VStack spacing={6} width="100%" className="container-box">
         <Text fontSize="2xl" fontWeight="bold">
           Welcome to Ollama Search GUI
         </Text>
@@ -177,10 +187,10 @@ const Index = () => {
         )}
 
         {response && (
-          <Box width="100%" p={4} borderWidth="1px" borderRadius="md">
-            <Text fontWeight="bold" mb={2}>AI Response:</Text>
+          <Box width="100%" p={6} className="response-box">
+            <Text fontWeight="bold" mb={3}>AI Response:</Text>
             <Box className="markdown-body">
-              <ReactMarkdown>{response}</ReactMarkdown>
+              <ReactMarkdown renderers={renderers}>{response}</ReactMarkdown>
             </Box>
           </Box>
         )}
@@ -188,14 +198,11 @@ const Index = () => {
         {enableSearch && searchResults && (
           <Box
             width="100%"
-            p={4}
-            borderWidth="1px"
-            borderRadius="md"
-            bg="gray.50"
-            fontSize="sm"
+            p={6}
+            className="response-box search-results"
           >
-            <Text fontWeight="bold" mb={2}>Web Search Results:</Text>
-            <ReactMarkdown>{searchResults}</ReactMarkdown>
+            <Text fontWeight="bold" mb={3}>Web Search Results:</Text>
+            <ReactMarkdown renderers={renderers}>{searchResults}</ReactMarkdown>
           </Box>
         )}
       </VStack>
