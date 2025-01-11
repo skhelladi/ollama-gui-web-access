@@ -2,6 +2,8 @@
 
 *Ollama GUI with Web Access* is a graphical user interface that connects to a local instance of Ollama and allows the selected Ollama model to browse/search the internet. Users can select from the available Ollama models, change the base URL, enter prompts, enable/disable search, etc. The search is provided via DuckDuckGo.
 
+This code is forked from [ollama-search-gui](https://github.com/GPT-Engineer-App/ollama-search-gui.git).
+
 ## Features
 
 - Select available Ollama models
